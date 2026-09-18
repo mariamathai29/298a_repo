@@ -3,38 +3,92 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
-
+from cocotb.triggers import RisingEdge, Timer
 
 @cocotb.test()
 async def test_project(dut):
-    dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
+    dut._log.info("Start 8-bit counter test")
+
+    # 10 us period
     clock = Clock(dut.clk, 10, unit="us")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
+    # Initial values
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
+
+   # 1. reset case
+
+    dut._log.info("Testing: reset")
+
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    assert dut.uo_out.value == 0
+
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    # 2. allow normal counting from 0-2
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    dut._log.info("Testing: counting")
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    assert dut.uo_out.value == 1
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    assert dut.uo_out.value == 2
+
+    # 3. test synchronous load (12) and count up 
+
+    dut._log.info("Testing: synchronous load")
+
+    dut.uio_in.value = 12
+
+    # enable load
+    dut.ui_in.value = 0b00000001
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    assert dut.uo_out.value == 12
+
+    # 4. count upwards from load value
+
+    dut._log.info("Testing: count after load")
+
+    dut.ui_in.value = 0
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    assert dut.uo_out.value == 13
+
+    # 5. test tri state for output enable = 0 (hi Z)
+
+    dut._log.info("Testing: output enable")
+
+    # for oe = 0, uio pins should not be driven (only uo)
+    assert dut.uio_oe.value == 0x00
+
+    # set oe
+    dut.ui_in.value = 0b00000010
+
+    await Timer(1, unit="ns")
+
+    assert dut.uio_oe.value == 0xFF
+    assert dut.uio_out.value == 43
+
+    # oe off again
+    dut.ui_in.value = 0
+
+    await Timer(1, unit="ns")
+
+    assert dut.uio_oe.value == 0x00
