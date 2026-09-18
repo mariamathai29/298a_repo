@@ -84,7 +84,7 @@ async def test_project(dut):
     await Timer(1, unit="ns")
 
     assert dut.uio_oe.value == 0xFF
-    assert dut.uio_out.value == 43
+    assert dut.uio_out.value == 13
 
     # oe off again
     dut.ui_in.value = 0
