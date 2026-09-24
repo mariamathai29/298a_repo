@@ -10,12 +10,12 @@ This is an 8 bit counter with asynchronous reset, synchronous load, and tri-stat
 
 Below are the waveforms as shown in the 8bitworkshop interface. I didn't test the tri-state output as this is handled by the TinyTapeout IO pins.
 
-![count up](images:count_up.png)
+![count up](images/count_up.png)
 
-![load data_in](images:data_load.png)
+![load data_in](images/data_load.png)
 
-![count up after loading](images:load_cnt.png)
+![count up after loading](images/load_cnt.png)
 
-![reset](images:rst.png)
+![reset](images/rst.png)
 
 
